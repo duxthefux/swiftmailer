@@ -340,12 +340,26 @@ class Swift_Mime_Headers_MailboxHeader extends Swift_Mime_Headers_AbstractHeader
      */
     private function _assertValidAddress($address)
     {
-        if (!preg_match('/^'.$this->getGrammar()->getDefinition('addr-spec').'$/D',
-            $address)) {
+        if ($this->isValidEmail($address) === false) {
             throw new Swift_RfcComplianceException(
                 'Address in mailbox given ['.$address.
                 '] does not comply with RFC 2822, 3.6.2.'
-                );
+            );
         }
+    }
+
+    // Function from ready2order to deal with umlaute in addresses
+    private function isValidEmail($email)
+    {
+        // LS-186
+        $parts = explode('@', $email);
+        $name = $parts[0];
+        $domain = $parts[1];
+
+        $domain = idn_to_ascii($domain, INTL_IDNA_VARIANT_UTS46);
+
+        $email = $name . '@' . $domain;
+
+        return (bool) filter_var($email, FILTER_VALIDATE_EMAIL);
     }
 }
